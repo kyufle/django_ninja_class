@@ -1,3 +1,4 @@
+from django.contrib.auth import authenticate as django_authenticate
 from ninja import NinjaAPI, Schema
 from typing import List, Optional
 from datetime import date
@@ -5,6 +6,19 @@ from employees.models import Employee
 from django.shortcuts import get_object_or_404
 
 api = NinjaAPI()
+
+
+# Autenticació bàsica
+class BasicAuth(HttpBasicAuth):
+    def authenticate(self, request, username, password):
+        user = django_authenticate(username=username, password=password)
+        if user:
+            # Genera un token simple
+            token = secrets.token_hex(16)
+            user.auth_token = token
+            user.save()
+            return token
+        return None
 
 # --- 1. Definición de SCHEMAS (Deben ir ARRIBA) ---
 
