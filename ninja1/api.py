@@ -1,9 +1,11 @@
 from django.contrib.auth import authenticate as django_authenticate
+from ninja.security import HttpBasicAuth, HttpBearer
 from ninja import NinjaAPI, Schema
 from typing import List, Optional
 from datetime import date
 from employees.models import Employee
 from django.shortcuts import get_object_or_404
+import secrets
 
 api = NinjaAPI()
 
@@ -20,6 +22,15 @@ class BasicAuth(HttpBasicAuth):
             return token
         return None
 
+ 
+# Autenticació per Token Bearer
+class AuthBearer(HttpBearer):
+    def authenticate(self, request, token):
+        try:
+            user = Usuari.objects.get(auth_token=token)
+            return user
+        except Usuari.DoesNotExist:
+            return None
 # --- 1. Definición de SCHEMAS (Deben ir ARRIBA) ---
 
 class EmployeeIn(Schema):
@@ -47,7 +58,7 @@ def get_employee(request, employee_id: int):
     return employee
 
 
-@api.get("/employees", response=List[EmployeeOut])
+@api.get("/employees", response=List[EmployeeOut], auth=AuthBearer())
 def list_employees(request):
     qs = Employee.objects.all()
     return qs
